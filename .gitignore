@@ -1,0 +1,10 @@
+*.pyc
+.*
+!/.gitignore
+db/schema.rb
+*.box
+*.keytab
+*.log
+**/*.framework/
+*.zip
+**/certs
