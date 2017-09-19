@@ -14,9 +14,14 @@
 package cmd
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
-
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
+	//"log"
+	"net/http"
 )
 
 var (
@@ -45,8 +50,15 @@ var (
 		Run:    test,
 	}
 
-	/// sample Flag var
-	times int
+	/// Flag variable
+	times        int
+	clientId     string
+	clientSecret string
+	tokenUrl     string
+	protectedUrl string
+
+	oauthConfig *clientcredentials.Config
+	ctx         context.Context
 )
 
 func init() {
@@ -63,17 +75,55 @@ func init() {
 	// is called directly, e.g.:
 	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	testCmd.Flags().IntVarP(&times, "times", "t", 1, "times to echo the input")
+	testCmd.Flags().StringVarP(&clientId, "client_id", "c", "", "application client ID")
+	testCmd.Flags().StringVarP(&clientSecret, "client_secret", "s", "", "application client Secret")
+	testCmd.Flags().StringVarP(&tokenUrl, "token_url", "u", "https://phriscage-trial-test.apigee.net/oauth/v2/token", "oauth server token URL")
+	testCmd.Flags().StringVarP(&protectedUrl, "protected_url", "p", "https://phriscage-trial-test.apigee.net/envirophat", "oauth server token URL")
 }
 
 // main logic
 func test(cmd *cobra.Command, args []string) {
 	fmt.Println("test called")
 	// handle any missing args
-	max := 10
+	// max := 10
+	max := 0
 	switch {
 	case times < max:
 		fmt.Printf("%d is not greater than %d\n", times, max)
 		return
 	}
 	fmt.Println(args)
+	// this should match whatever service has given you
+	// client credential access
+	ctx = context.Background()
+	oauthConfig = &clientcredentials.Config{
+		ClientID:     clientId,
+		ClientSecret: clientSecret,
+		TokenURL:     tokenUrl,
+		//Endpoint: oauth2.Endpoint{
+		// AuthURL:  "https://oauth.example.com/dex/auth",
+		//TokenURL: "https://oauth.example.com/oauth/token",
+		//},
+		Scopes: []string{"iot"},
+	}
+
+	// add transport for self-signed certificate to context
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	httpClient := &http.Client{Transport: tr}
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, httpClient)
+
+	// you can modify the client (for example ignoring bad certs or otherwise)
+	// by modifying the context
+	client := oauthConfig.Client(ctx)
+
+	fmt.Println(client)
+	// the client will update its token if it's expired
+	resp, err := client.Get(protectedUrl)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(resp)
 }
