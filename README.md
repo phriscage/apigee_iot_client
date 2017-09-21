@@ -9,6 +9,15 @@ Trying out some features of Apigee.
 
 ### <a name="configuration"></a>Configuration:
 
+### <a name="Example"></a>Example:
+
+Create an application and capture the CLIENT_ID and CLIENT_SECRET. 
+
+Run the Docker container with privledged mode via Docker Compose. _Docker Swarm priviledged mode is not available yet. [issue](https://github.com/moby/moby/issues/24862)_
+
+	make 
+
+
 ### <a name="development"></a>Development:
 
 Sample OAuth commands:

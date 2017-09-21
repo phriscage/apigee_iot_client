@@ -9,6 +9,8 @@ from envirophat import light, weather, motion
 class EnviroPhatData(object):
     """ encapsulate EnviroPhat data in a class """
 
+    _precision = 2
+
     def __init__(self):
         """ instantiate the class """
 
@@ -25,27 +27,22 @@ class EnviroPhatData(object):
     @staticmethod
     def get_weather_temperature(precision=None):
         """ return weather.temperature() """
-        if not precision:
-            precision = 2
         precision = int(precision)
         return round(weather.temperature(), precision)
 
     @staticmethod
     def get_weather_pressure(precision=None):
         """ return weather.preasure() """
-        if not precision:
-            precision = 2
         precision = int(precision)
         return round(weather.pressure(), precision)
 
-    def get_weather_altitude(qnh=None, precision=None):
+    @staticmethod
+    def get_weather_altitude(precision=None, qnh=None):
         """ return weather.altitude() """
+        precision = int(precision)
         if not qnh:
             qnh = 1020
         qnh = int(qnh)
-        if not precision:
-            precision = 2
-        precision = int(precision)
         return round(weather.altitude(qnh), precision)
 
     @staticmethod
@@ -59,17 +56,20 @@ class EnviroPhatData(object):
         return list(motion.magnetometer())
 
     @classmethod
-    def get_sample(cls):
+    def get_sample(cls, precision=None):
         """ get the sample data format """
+        if not precision:
+            precision = cls._precision
+        precision = int(precision)
         data = {
             'light': {
                 'brightness': cls.get_light(),
                 'rbg': cls.get_rgb_light()
             },
             'weather': {
-                'temperature': cls.get_weather_temperature(),
-                'pressure': cls.get_weather_pressure(),
-                'altitude': cls.get_weather_altitude()
+                'temperature': cls.get_weather_temperature(precision),
+                'pressure': cls.get_weather_pressure(precision),
+                'altitude': cls.get_weather_altitude(precision)
             },
             'motion': {
                 'accelerometer': cls.get_mothion_accelerometer(),
