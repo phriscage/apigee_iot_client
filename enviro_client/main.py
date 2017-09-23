@@ -21,25 +21,32 @@ from envirophat_data import EnviroPhatData
 logger = logging.getLogger(__name__)
 
 
-def _validate(**kwargs):
+def _validate(parser):
     """ verify the required variables are defined """
+    kwargs = parser.parse_args().__dict__
     print(kwargs)
     for required in ('CLIENT_ID', 'CLIENT_SECRET', 'OAUTH_TOKEN_URL',
                      'PROTECTED_URL'):
         if not kwargs.get(required.lower(), None):
-            raise Exception("'%s' is None" % required)
+            parser.print_help()
+            raise Exception("'%s/%s' is None" % (required, required.lower()))
     for url in ('OAUTH_TOKEN_URL', 'PROTECTED_URL'):
         parsed_url = urlparse(kwargs.get(url.lower()))
-        if not bool(parsed_url.scheme) or not bool(parsed_url.netloc):
+        scheme = parsed_url.scheme
+        netloc = parsed_url.netloc.split(':')[0]
+        if not bool(scheme) or not bool(netloc) \
+                or scheme == 'None' or netloc == 'None':
+            parser.print_help()
             raise Exception(
-                "'%s' is not a valid URL: '%s'" % (url, kwargs.get(url.lower()))
+                "'%s/%s' is not a valid URL: '%s'" % (
+                    url, url.lower(), kwargs.get(url.lower())
+                    )
             )
 
 
 def main(**kwargs):
     """ run the main logic """
     logger.info("Starting...")
-    _validate(**kwargs)
     client = BackendApplicationClient(
         client_id=kwargs['client_id']
     )
@@ -57,7 +64,7 @@ def main(**kwargs):
         data = EnviroPhatData.get_sample()
         if kwargs['leds']:
             leds.off()
-        session.post(PROTECTED_URL, data=data)
+        session.post(kwargs['protected_url'], data=data)
         logger.debug("Sleeping for '%d' seconds..." % kwargs['internval'])
         time.sleep(kwargs['internval'])
     logger.info("Finished.")
@@ -84,5 +91,6 @@ if __name__ == "__main__":
                         type=int, dest="internval", default=INTERVAL)
     parser.add_argument("-l", "--leds", help="Turn LEDs On/Off between samples",
                         type=bool, dest="leds", default=False)
+    _validate(parser)
     kwargs = parser.parse_args()
     main(**kwargs.__dict__)
