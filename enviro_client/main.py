@@ -10,12 +10,13 @@ import time
 from urllib.parse import urlparse
 
 from oauthlib.oauth2 import BackendApplicationClient
+from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
 from requests_oauthlib import OAuth2Session
 from compliance_fixes.apigee import apigee_compliance_fix
 
 from envirophat import leds
-from config import OAUTH_TOKEN_URL, PROTECTED_URL, INTERVAL, \
-    CLIENT_ID, CLIENT_SECRET
+from config import OAUTH_TOKEN_URL, OAUTH_TOKEN_REFRESH_URL, PROTECTED_URL, \
+    CLIENT_ID, CLIENT_SECRET, INTERVAL
 from envirophat_data import EnviroPhatData
 
 logger = logging.getLogger(__name__)
@@ -47,15 +48,25 @@ def _validate(parser):
 def main(**kwargs):
     """ run the main logic """
     logger.info("Starting...")
+    print(OAUTH_TOKEN_REFRESH_URL)
+    print(kwargs['oauth_token_refresh_url'])
     client = BackendApplicationClient(
         client_id=kwargs['client_id']
     )
-    session = OAuth2Session(client=client)
+    client_creds = {
+        'client_id': kwargs['client_id'],
+        'client_secret': kwargs['client_secret']
+    }
+    session = OAuth2Session(
+        client=client,
+        # not enabled for client_credentials grant
+        # auto_refresh_url=kwargs['oauth_token_refresh_url'],
+        # auto_refresh_kwargs=client_creds
+    )
     session = apigee_compliance_fix(session)
     session.fetch_token(
         token_url=kwargs['oauth_token_url'],
-        client_id=kwargs['client_id'],
-        client_secret=kwargs['client_secret']
+        **client_creds
     )
     leds.off()
     while True:
@@ -64,7 +75,15 @@ def main(**kwargs):
         data = EnviroPhatData.get_sample()
         if kwargs['leds']:
             leds.off()
-        session.post(kwargs['protected_url'], data=data)
+        try:
+            session.post(kwargs['protected_url'], data=data)
+        except TokenExpiredError as error:
+            logger.info("Trying to fetch OAuth token again...")
+            session.fetch_token(
+                token_url=kwargs['oauth_token_url'],
+                **client_creds
+            )
+            session.post(kwargs['protected_url'], data=data)
         logger.debug("Sleeping for '%d' seconds..." % kwargs['internval'])
         time.sleep(kwargs['internval'])
     logger.info("Finished.")
@@ -85,6 +104,10 @@ if __name__ == "__main__":
     parser.add_argument("-t_u", "--oauth_token_url", help="OAuth Token URL",
                         type=str, dest="oauth_token_url",
                         default=OAUTH_TOKEN_URL)
+    parser.add_argument("-tr_u", "--oauth_token_refresh_url",
+                        type=str, dest="oauth_token_refresh_url",
+                        help="OAuth Token Refresh URL",
+                        default=OAUTH_TOKEN_REFRESH_URL)
     parser.add_argument("-p_u", "--protected_url", help="Protected URL",
                         type=str, dest="protected_url", default=PROTECTED_URL)
     parser.add_argument("-i", "--internval", help="Sample Interval (seconds)",
