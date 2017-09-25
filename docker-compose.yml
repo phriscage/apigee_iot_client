@@ -1,0 +1,19 @@
+version: '3'
+services:
+  iot_enviro_client:
+    image: phriscage/iot_enviro_client
+    devices:
+      - /dev/mem
+      - /dev/i2c-1
+    privileged: true
+    command: python main.py -l True
+    environment:
+    - CLIENT_ID
+    - CLIENT_SECRET
+    - OAUTH_TOKEN_URL
+    - PROTECTED_URL
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role != manager
