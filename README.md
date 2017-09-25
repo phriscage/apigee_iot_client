@@ -19,6 +19,8 @@ Create an application in Apigee and capture the CLIENT_ID and CLIENT_SECRET.
 
 	export CLIENT_ID=<CLIENT_ID>; 
 	export CLIENT_SECRET=<CLIENT_SECRET>;
+	export OAUTH_TOKEN_URL=https://phriscage-trial-test.apigee.net/oauth/v2/token
+	export PROTECTED_URL=https://phriscage-trial-test.apigee.net/envirophat
 
 Run the *phriscage/iot_enviro_client* Docker container with privledged mode via Docker Compose [config](docker-compose.yml). _Docker Swarm priviledged mode is not available yet. [issue](https://github.com/moby/moby/issues/24862)_
 
@@ -76,3 +78,9 @@ export ACCESS_TOKEN=`curl -s -H 'Content-Type: application/x-www-form-urlencoded
 ```
 curl -i -H "Authorization: Bearer $ACCESS_TOKEN" https://phriscage-trial-test.apigee.net/envirophat
 ```
+
+
+### <a name="todo"></a>To-Do:
+
+*	Add exception and retry handling
+* 	Unit tests?

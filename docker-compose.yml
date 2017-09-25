@@ -1,6 +1,6 @@
 version: '3'
 services:
-  iot_enviro_client:
+  client:
     image: phriscage/iot_enviro_client
     devices:
       - /dev/mem

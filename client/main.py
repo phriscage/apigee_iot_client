@@ -48,8 +48,6 @@ def _validate(parser):
 def main(**kwargs):
     """ run the main logic """
     logger.info("Starting...")
-    print(OAUTH_TOKEN_REFRESH_URL)
-    print(kwargs['oauth_token_refresh_url'])
     client = BackendApplicationClient(
         client_id=kwargs['client_id']
     )

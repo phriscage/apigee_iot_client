@@ -1,6 +1,6 @@
 version: '3'
 services:
-  iot_enviro_client:
+  client:
     build:
-      context: enviro_client
+      context: client
     image: phriscage/iot_enviro_client
