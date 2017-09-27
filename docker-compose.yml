@@ -8,10 +8,11 @@ services:
     privileged: true
     command: python main.py -l True
     environment:
-    - CLIENT_ID
-    - CLIENT_SECRET
-    - OAUTH_TOKEN_URL
-    - PROTECTED_URL
+      - CLIENT_ID
+      - CLIENT_SECRET
+      - OAUTH_TOKEN_URL
+      - PROTECTED_URL
+    restart: always
     deploy:
       mode: global
       placement:
