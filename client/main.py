@@ -1,90 +1,28 @@
-# pylint: disable=broad-except,invalid-name,wrong-import-position
+# pylint: disable=broad-except,invalid-name,wrong-import-position,E402
 """
-    EnviroPhat client
+    EnviroPhat client main
 """
-# import os
-# import sys
-import argparse
+import os
+import sys
 import logging
-import time
-from urllib.parse import urlparse
-
-from oauthlib.oauth2 import BackendApplicationClient
-from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
-from requests_oauthlib import OAuth2Session
-from compliance_fixes.apigee import apigee_compliance_fix
-
-from envirophat import leds
+import argparse
 from config import OAUTH_TOKEN_URL, OAUTH_TOKEN_REFRESH_URL, PROTECTED_URL, \
     CLIENT_ID, CLIENT_SECRET, INTERVAL
-from envirophat_data import EnviroPhatData
 
-logger = logging.getLogger(__name__)
+sys.path.insert(0, os.path.dirname(
+    os.path.realpath(__file__)) + '/lib')
 
-
-def _validate(parser):
-    """ verify the required variables are defined """
-    kwargs = parser.parse_args().__dict__
-    print(kwargs)
-    for required in ('CLIENT_ID', 'CLIENT_SECRET', 'OAUTH_TOKEN_URL',
-                     'PROTECTED_URL'):
-        if not kwargs.get(required.lower(), None):
-            parser.print_help()
-            raise Exception("'%s/%s' is None" % (required, required.lower()))
-    for url in ('OAUTH_TOKEN_URL', 'PROTECTED_URL'):
-        parsed_url = urlparse(kwargs.get(url.lower()))
-        scheme = parsed_url.scheme
-        netloc = parsed_url.netloc.split(':')[0]
-        if not bool(scheme) or not bool(netloc) \
-                or scheme == 'None' or netloc == 'None':
-            parser.print_help()
-            raise Exception(
-                "'%s/%s' is not a valid URL: '%s'" % (
-                    url, url.lower(), kwargs.get(url.lower())
-                    )
-            )
+from enviro.client import EnviroPhatClient # noqa
 
 
 def main(**kwargs):
-    """ run the main logic """
-    logger.info("Starting...")
-    client = BackendApplicationClient(
-        client_id=kwargs['client_id']
-    )
-    client_creds = {
-        'client_id': kwargs['client_id'],
-        'client_secret': kwargs['client_secret']
-    }
-    session = OAuth2Session(
-        client=client,
-        # not enabled for client_credentials grant
-        # auto_refresh_url=kwargs['oauth_token_refresh_url'],
-        # auto_refresh_kwargs=client_creds
-    )
-    session = apigee_compliance_fix(session)
-    session.fetch_token(
-        token_url=kwargs['oauth_token_url'],
-        **client_creds
-    )
-    leds.off()
-    while True:
-        if kwargs['leds']:
-            leds.on()
-        data = EnviroPhatData.get_sample()
-        if kwargs['leds']:
-            leds.off()
-        try:
-            session.post(kwargs['protected_url'], data=data)
-        except TokenExpiredError as error:
-            logger.info("Trying to fetch OAuth token again...")
-            session.fetch_token(
-                token_url=kwargs['oauth_token_url'],
-                **client_creds
-            )
-            session.post(kwargs['protected_url'], data=data)
-        logger.debug("Sleeping for '%d' seconds..." % kwargs['internval'])
-        time.sleep(kwargs['internval'])
-    logger.info("Finished.")
+    """ main logic """
+    try:
+        client = EnviroPhatClient(**kwargs)
+        client.run()
+    except Exception:
+        parser.print_help()
+        raise
 
 
 if __name__ == "__main__":
@@ -112,6 +50,5 @@ if __name__ == "__main__":
                         type=int, dest="internval", default=INTERVAL)
     parser.add_argument("-l", "--leds", help="Turn LEDs On/Off between samples",
                         type=bool, dest="leds", default=False)
-    _validate(parser)
     kwargs = parser.parse_args()
     main(**kwargs.__dict__)
