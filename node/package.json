@@ -1,0 +1,7 @@
+{
+    "dependencies": {
+        "apigee-access": "^1.4.0",
+        "aws-sdk": "^2.131.0",
+        "uuid": "^3.1.0"
+    }
+}

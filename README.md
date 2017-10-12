@@ -58,6 +58,18 @@ curl -i -H "Authorization: Basic $BASIC_AUTH" https://api.enterprise.apigee.com/
 curl -i -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com/v1/o/phriscage-trial/apps?includeCred=true&expand=true'
 ```
 
+* List app just created by AppID:
+
+```
+curl -i -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com/v1/o/phriscage-trial/apps/79535e6d-5dac-4391-bfa8-52a6650d8ee1?includeCred=true&expand=true'
+```
+
+```
+export JSON=`curl -s -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com/v1/o/phriscage-trial/apps/79535e6d-5dac-4391-bfa8-52a6650d8ee1?includeCred=true&expand=true'`;
+export CLIENT_KEY=`echo $JSON | python -c "import sys, json; print json.load(sys.stdin)['credentials'][0]['consumerKey']"`; echo $CLIENT_KEY;
+export CLIENT_SECRET=`echo $JSON | python -c "import sys, json; print json.load(sys.stdin)['credentials'][0]['consumerSecret']"`; echo $CLIENT_SECRET
+```
+
 * Set session Basic client Auth:
 
 ```
@@ -77,6 +89,12 @@ export ACCESS_TOKEN=`curl -s -H 'Content-Type: application/x-www-form-urlencoded
 
 ```
 curl -i -H "Authorization: Bearer $ACCESS_TOKEN" https://phriscage-trial-test.apigee.net/envirophat
+```
+
+* Set/Get encrypted vaults:
+
+```
+curl -i -X GET -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com/v1/o/phriscage-trial/e/test/vaults'
 ```
 
 
