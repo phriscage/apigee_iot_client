@@ -64,17 +64,20 @@ curl -i -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com
 curl -i -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com/v1/o/phriscage-trial/apps/79535e6d-5dac-4391-bfa8-52a6650d8ee1?includeCred=true&expand=true'
 ```
 
-```
-export JSON=`curl -s -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com/v1/o/phriscage-trial/apps/79535e6d-5dac-4391-bfa8-52a6650d8ee1?includeCred=true&expand=true'`;
-export CLIENT_KEY=`echo $JSON | python -c "import sys, json; print json.load(sys.stdin)['credentials'][0]['consumerKey']"`; echo $CLIENT_KEY;
-export CLIENT_SECRET=`echo $JSON | python -c "import sys, json; print json.load(sys.stdin)['credentials'][0]['consumerSecret']"`; echo $CLIENT_SECRET
-```
-
 * Set session Basic client Auth:
 
 ```
 export CLIENT_KEY=<abc>;
 export CLIENT_SECRET=<123>;
+export BASIC_CLIENT_AUTH=`echo -n $CLIENT_KEY:$CLIENT_SECRET | base64`;
+```
+
+* Capturing the client credentials (first item) by AppID and setting Basic client Auth:
+
+```
+export JSON=`curl -s -H "Authorization: Basic $BASIC_AUTH" 'https://api.enterprise.apigee.com/v1/o/phriscage-trial/apps/79535e6d-5dac-4391-bfa8-52a6650d8ee1?includeCred=true&expand=true'`;
+export CLIENT_KEY=`echo $JSON | python -c "import sys, json; print json.load(sys.stdin)['credentials'][0]['consumerKey']"`; echo $CLIENT_KEY;
+export CLIENT_SECRET=`echo $JSON | python -c "import sys, json; print json.load(sys.stdin)['credentials'][0]['consumerSecret']"`; echo $CLIENT_SECRET
 export BASIC_CLIENT_AUTH=`echo -n $CLIENT_KEY:$CLIENT_SECRET | base64`;
 ```
 
@@ -90,6 +93,17 @@ export ACCESS_TOKEN=`curl -s -H 'Content-Type: application/x-www-form-urlencoded
 ```
 curl -i -H "Authorization: Bearer $ACCESS_TOKEN" https://phriscage-trial-test.apigee.net/envirophat
 ```
+
+* Call protected resource with AWS credentials;
+
+```
+export AWS_CLIENT_AUTH=`echo -n $AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY | base64`;
+```
+
+```
+curl -i -H "Authorization: Bearer $ACCESS_TOKEN" -H "AWS-Authorization: $AWS_CLIENT_AUTH" https://phriscage-trial-test.apigee.net/test/aws -d '{"a": 123}'
+```
+
 
 * Set/Get encrypted vaults:
 

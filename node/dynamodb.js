@@ -1,10 +1,13 @@
 // AWS DynamoDB example
 var http = require('http');
-var url = require('url');
+//var url = require('url');
 var apigee = require('apigee-access');
 var uuidv4 = require('uuid/v4');
 var AWS = require('aws-sdk');
-AWS.config.update({region: 'us-east-1'});
+const awsRegion = 'us-east-1';
+const awsDynamoDBapiVersion = '2012-08-10';
+
+AWS.config.update({region: awsRegion});
 
 // Check if isObject is an object
 function isObject(val) {
@@ -13,17 +16,16 @@ function isObject(val) {
 }
 
 // format the DynamoDB item and insert the document
+// with unique id and timestamps. 
 function putDynamoData(resp, data) {
 
-    // set the primary key
+    // set the primary key and created_at timestamp
     var uuid = uuidv4();
-    data['id'] = uuid;
-    // set created_at time stamps
     var date = new Date();
+    data['id'] = uuid;
     data['created_at'] = date.toISOString(); 
 	// Create DynamoDB document client
-	var docClient = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
-	//var dynamodb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
+	var docClient = new AWS.DynamoDB.DocumentClient({apiVersion: awsDynamoDBapiVersion});
 
 	var params = {
    		Item: data,
@@ -31,7 +33,6 @@ function putDynamoData(resp, data) {
   		TableName: 'test'
 	};
 
-	//dynamodb.putItem(params, function(err, data) {
 	docClient.put(params, function(err, responseData) {
 	    if (err) {
             var message = 'Something went wrong';
@@ -47,10 +48,42 @@ function putDynamoData(resp, data) {
 
 // Build a custom response
 function sendResponse(resp, data, status) {
+    data['status'] = status
     var responseHeaders = {
         'Content-Type': 'application/json', 
-        //'X-Apigee-messageId': messageId
     }
+    resp.writeHead(status, responseHeaders);
+    var json = JSON.stringify(data, null, 4);
+    resp.end(json + '\n');
+}
+
+// main server logic 
+// capture the payload data before continuing response
+// and enforce basic validation for JSON.
+// parse the AWS credentials from a custom header for testing
+var server = http.createServer(function(req, resp) {
+	console.log('Processing request url: ' + req.url);
+	console.log(req.headers);
+    if ("aws-authorization" in req.headers) {
+        var aws_creds = req.headers['aws-authorization'];
+        //var [client_id, client_secret] = Buffer(
+            //aws_creds, 'base64'
+        //).toString().split(':', 2);
+        var creds = aws_creds.split(':', 2);
+        if (creds.length === 2) {
+            var client_id = creds[0];
+            var client_secret = creds[1];
+            AWS.config.update({
+                accessKeyId: client_id, 
+                secretAccessKey: client_secret
+            });
+            resp.setHeader('X-AWS-client_id', client_id);
+            resp.setHeader('X-AWS-client_secret', client_secret);
+        }
+
+    }
+    var messageId = apigee.getVariable(req, 'messageid') || ""
+    resp.setHeader('X-Apigee-messageId', messageId);
     // Let's add the request headers if exist
     //var key, requestHeaders = ['user-agent', 'x-forwarded-for'];
     //for (var key in req.headers) {
@@ -59,22 +92,6 @@ function sendResponse(resp, data, status) {
             //responseHeaders['X-Request-' + key] = req.headers[key];
         //}
     //}
-    data['status'] = status
-    resp.writeHead(status, responseHeaders);
-    var json = JSON.stringify(data, null, 4);
-    resp.end(json + '\n');
-}
-
-// main server logic
-var server = http.createServer(function(req, resp) {
-	console.log('Processing request url: ' + req.url);
-	console.log(req.headers);
-    //var queryData = url.parse(req.url, true).query;
-	//console.log(queryData);
-    //AWS.config.update({accessKeyId: queryData.client_id});
-    //AWS.config.update({secretAccessKey: queryData.client_secret});
-    var messageId = apigee.getVariable(req, 'messageid') ? messageId : ""
-    resp.setHeader('X-Apigee-messageId', messageId);
     var payload = '';
     req.on('data', function (chunk) {
         payload += chunk;
@@ -85,6 +102,7 @@ var server = http.createServer(function(req, resp) {
         try {
             jsonPayload = JSON.parse(payload) || {};
             if (isObject(jsonPayload)){
+                //sendResponse(resp, {data: req.headers}, 200);
                 putDynamoData(resp, jsonPayload);
             } else {
                 var message = 'JSON payload required';
@@ -102,8 +120,9 @@ var server = http.createServer(function(req, resp) {
 
 server.on('error', function (e) {
     // Handle your error here
-     console.log("asdfasdf");
-     sendResponse(resp, {error: message}, 400);
+    message = "Something broke"
+    console.log(e)
+    sendResponse(resp, {error: message}, 500);
 });
 
 server.listen(9000, function() {
