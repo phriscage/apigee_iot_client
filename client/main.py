@@ -20,8 +20,10 @@ def main(**kwargs):
     try:
         client = EnviroPhatClient(**kwargs)
         client.run()
-    except Exception:
+    except AttributeError:
         parser.print_help()
+        raise
+    except Exception:
         raise
 
 

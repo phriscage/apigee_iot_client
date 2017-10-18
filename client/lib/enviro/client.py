@@ -7,6 +7,7 @@ import sys
 import logging
 import time
 from urllib.parse import urlparse
+import simplejson as json
 
 from oauthlib.oauth2 import BackendApplicationClient
 from oauthlib.oauth2.rfc6749.errors import TokenExpiredError
@@ -38,7 +39,7 @@ class EnviroPhatClient(object):
         print(kwargs)
         for required in self.required:
             if not kwargs.get(required.lower(), None):
-                raise Exception(
+                raise AttributeError(
                     "'%s/%s' is None" % (required, required.lower())
                 )
         for url in ('OAUTH_TOKEN_URL', 'PROTECTED_URL'):
@@ -47,7 +48,7 @@ class EnviroPhatClient(object):
             netloc = parsed_url.netloc.split(':')[0]
             if not bool(scheme) or not bool(netloc) \
                     or scheme == 'None' or netloc == 'None':
-                raise Exception(
+                raise AttributeError(
                     "'%s/%s' is not a valid URL: '%s'" % (
                         url, url.lower(), kwargs.get(url.lower())
                         )
@@ -82,7 +83,11 @@ class EnviroPhatClient(object):
             if self.kwargs['leds']:
                 leds.off()
             try:
-                session.post(self.kwargs['protected_url'], data=data)
+                # 'application/x-www-form-urlencoded'
+                # session.post(self.kwargs['protected_url'], data=data)
+                req = session.post(
+                    self.kwargs['protected_url'], data=json.dumps(data)
+                )
             except TokenExpiredError:
                 logger.info("Trying to fetch OAuth token again...")
                 session.fetch_token(
@@ -90,6 +95,11 @@ class EnviroPhatClient(object):
                     **client_creds
                 )
                 session.post(self.kwargs['protected_url'], data=data)
+            if req.status_code not in [200, 201]:
+                logger.warn(req.text)
+                raise RuntimeError(
+                    "incorrect status code '%i'" % req.status_code
+                )
             logger.debug(
                 "Sleeping for '%d' seconds..." % self.kwargs['internval']
             )
