@@ -1,6 +1,16 @@
-// AWS DynamoDB example
+/*
+    Name: server.js
+    Developer: Chris Page
+    Email: phriscage@gmail.com
+    Purpose:
+        An AWS DynamoDB NodeJS server example. 
+        Start a server and set the callback for a valid JSON
+        payload to store the document in DynamoDB. The AWS
+        credentials are provided in a custom header that is
+        determined outside this logic.
+*/
+
 var http = require('http');
-//var url = require('url');
 var apigee = require('apigee-access');
 var uuidv4 = require('uuid/v4');
 var AWS = require('aws-sdk');
@@ -16,54 +26,53 @@ function isObject(val) {
 }
 
 // format the DynamoDB item and insert the document
-// with unique id and timestamps. 
+// with unique id and createdAt timestamps.
 function putDynamoData(resp, data) {
 
-    // set the primary key and created_at timestamp
     var uuid = uuidv4();
     var date = new Date();
     data['id'] = uuid;
-    data['created_at'] = date.toISOString(); 
-	// Create DynamoDB document client
-	var docClient = new AWS.DynamoDB.DocumentClient({apiVersion: awsDynamoDBapiVersion});
+    data['created_at'] = date.toISOString();
+    // Create DynamoDB document client
+    var docClient = new AWS.DynamoDB.DocumentClient({apiVersion: awsDynamoDBapiVersion});
 
-	var params = {
-   		Item: data,
-  		ReturnConsumedCapacity: 'TOTAL', 
-  		TableName: 'test'
-	};
+    var params = {
+        Item: data,
+        ReturnConsumedCapacity: 'TOTAL',
+        TableName: 'test'
+    };
 
-	docClient.put(params, function(err, responseData) {
-	    if (err) {
+    docClient.put(params, function(err, responseData) {
+        if (err) {
             var message = 'Something went wrong';
-		    console.log(err, err.stack); // an error occurred
+            console.log(err, err.stack); // an error occurred
             sendResponse(resp, {message: message, error: err}, 500);
         } else {
-		    console.log(responseData);   // successful response
-            resp.setHeader('X-Apigee-UUID', uuid);
+            console.log(responseData);   // successful response
+            resp.setHeader('X-AWS-DynamoDB-UUID', uuid);
             sendResponse(resp, {message: 'Success', data: data, response: responseData}, 201);
         }
-	});
+    });
 }
 
 // Build a custom response
 function sendResponse(resp, data, status) {
     data['status'] = status
     var responseHeaders = {
-        'Content-Type': 'application/json', 
+        'Content-Type': 'application/json',
     }
     resp.writeHead(status, responseHeaders);
     var json = JSON.stringify(data, null, 4);
     resp.end(json + '\n');
 }
 
-// main server logic 
+// main server logic
 // capture the payload data before continuing response
 // and enforce basic validation for JSON.
 // parse the AWS credentials from a custom header for testing
 var server = http.createServer(function(req, resp) {
-	console.log('Processing request url: ' + req.url);
-	console.log(req.headers);
+    console.log('Processing request url: ' + req.url);
+    //  console.log(req.headers);
     if ("aws-authorization" in req.headers) {
         var aws_creds = req.headers['aws-authorization'];
         //var [client_id, client_secret] = Buffer(
@@ -74,7 +83,7 @@ var server = http.createServer(function(req, resp) {
             var client_id = creds[0];
             var client_secret = creds[1];
             AWS.config.update({
-                accessKeyId: client_id, 
+                accessKeyId: client_id,
                 secretAccessKey: client_secret
             });
             resp.setHeader('X-AWS-client_id', client_id);
@@ -118,6 +127,7 @@ var server = http.createServer(function(req, resp) {
     })
 });
 
+// Handle any http server errors
 server.on('error', function (e) {
     // Handle your error here
     message = "Something broke"
@@ -125,6 +135,7 @@ server.on('error', function (e) {
     sendResponse(resp, {error: message}, 500);
 });
 
+// Start the server on port 9000
 server.listen(9000, function() {
     console.log('Node HTTP server is listening');
 });

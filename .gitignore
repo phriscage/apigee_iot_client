@@ -8,3 +8,4 @@ db/schema.rb
 **/*.framework/
 *.zip
 **/certs
+node_modules
