@@ -101,7 +101,7 @@ class EnviroPhatClient(object):
                     "incorrect status code '%i'" % req.status_code
                 )
             logger.debug(
-                "Sleeping for '%d' seconds..." % self.kwargs['internval']
+                "Sleeping for '%f' seconds..." % self.kwargs['internval']
             )
             time.sleep(self.kwargs['internval'])
         logger.info("Finished.")
