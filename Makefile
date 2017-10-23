@@ -1,9 +1,15 @@
 SHELL := /bin/bash
 
-default: run
+default: up
 
-run:
+up:
 	docker-compose -f docker-compose.yml up -d
+
+demo1:
+	docker-compose -f docker-compose.yml run --rm client python main.py -l True 
+
+demo2:
+	docker-compose -f docker-compose.yml run --rm client python main.py -l True -i 0.05
 
 log:
 	docker-compose -f docker-compose.yml logs -f

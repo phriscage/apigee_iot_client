@@ -49,7 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("-p_u", "--protected_url", help="Protected URL",
                         type=str, dest="protected_url", default=PROTECTED_URL)
     parser.add_argument("-i", "--internval", help="Sample Interval (seconds)",
-                        type=int, dest="internval", default=INTERVAL)
+                        type=float, dest="internval", default=INTERVAL)
     parser.add_argument("-l", "--leds", help="Turn LEDs On/Off between samples",
                         type=bool, dest="leds", default=False)
     kwargs = parser.parse_args()

@@ -33,7 +33,7 @@ Automatic:
 In addition to the app client credentials, the EnviroPhat IoT requires the OAUTH_TOKEN_URL and PROTECTED_URL when it bootstraps. You can defined these in the [.env](.env) hidden file or via command line. Best practices would leverage Docker secrets or Vault to provide secrets to the application, but this is only for demostration pruposes. 
 
 	export OAUTH_TOKEN_URL=https://phriscage-trial-test.apigee.net/oauth/v2/token
-	export PROTECTED_URL=https://phriscage-trial-test.apigee.net/envirophat/v3/data
+	export PROTECTED_URL=https://phriscage-trial-test.apigee.net/envirophat/v4/data
 
 Try using curl on the PROTECTED_URL without credentials. Will you see a 401 or 403 response?:
 
@@ -80,7 +80,7 @@ export BASIC_CLIENT_AUTH=`echo -n $CLIENT_ID:$CLIENT_SECRET | base64`; export AC
 * Call protected resource:
 
 ```
-curl -i -X POST -H "Authorization: Bearer $ACCESS_TOKEN" https://phriscage-trial-test.apigee.net/envirophat/v3/data 
+curl -i -X POST -H "Authorization: Bearer $ACCESS_TOKEN" https://phriscage-trial-test.apigee.net/envirophat/v4/data 
 ```
 
 * Call protected resource with AWS credentials;
