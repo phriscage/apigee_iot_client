@@ -12,6 +12,7 @@ services:
       - CLIENT_SECRET
       - OAUTH_TOKEN_URL
       - PROTECTED_URL
+      - INTERVAL
     # restart: always
     deploy:
       mode: global

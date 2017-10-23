@@ -13,7 +13,7 @@ CLIENT_ID = os.getenv('CLIENT_ID')
 CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 
 # Client options
-INTERVAL = int(os.getenv('INTERVAL', 2))
+INTERVAL = float(os.getenv('INTERVAL', 2.0))
 
 # Gateway configuration:
 GATEWAY_HOSTNAME = os.getenv('GATEWAY_HOSTNAME')
